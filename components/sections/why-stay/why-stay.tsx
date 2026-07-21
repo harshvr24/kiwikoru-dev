@@ -128,7 +128,16 @@ export default function WhyStay() {
         // all shrink together — the exact composition, just smaller, with no
         // change to the (tightly coupled) reel geometry or the pin driver. (The
         // heading lives OUTSIDE, above, so it keeps the shared display size.)
-        className="isolate absolute left-1/2 top-1/2 h-[434px] w-[876px] max-w-full -translate-x-1/2 -translate-y-1/2 max-md:max-w-none max-md:scale-[0.4]"
+        //
+        // The 876px stage needs 924px of viewport (876 + the 48px gutter) to fit,
+        // so 768→924 is a band where the design is too wide but the phone's 0.4
+        // would be absurdly small. `md:max-[924px]:` is exactly that window: one
+        // gentler step at 0.8 (876 → 701px, inside the 720px available at 768).
+        // A constant, NOT a vw-derived fit — see the [data-shots-wheel] note in
+        // globals.css for why `100vw` in calc() is not trustworthy here.
+        // Tailwind v4 emits `scale` and `translate` as separate CSS properties,
+        // so these never fight the -translate-*-1/2 centring.
+        className="isolate absolute left-1/2 top-1/2 h-[434px] w-[876px] max-w-full -translate-x-1/2 -translate-y-1/2 md:max-[924px]:scale-[0.8] max-md:max-w-none max-md:scale-[0.4]"
       >
         {/* The reel — bright phrases scrolling behind the glass. Masked to fade
             above/below the pill band (globals.css [data-whystay-window]) so only

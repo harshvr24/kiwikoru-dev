@@ -34,9 +34,13 @@ export default function Pricing() {
       // rhythm scales with the viewport but stays consistent across sections
       // (see comparison.tsx for the rationale). Mobile keeps its full-height
       // layout + 20dvh padding, untouched.
-      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden py-[25dvh] max-md:py-[20dvh]"
+      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden px-6 py-[25dvh] max-md:py-[20dvh]"
     >
-      <div className="flex w-[1146px] flex-col items-center gap-[20px] max-md:w-full max-md:px-6">
+      {/* Capped-fluid: resolves to exactly 1146px when there's room (identical
+          to the old `w-[1146px]`), shrinks below instead of centre-cropping.
+          Gutter is on the SECTION — a `px-6` here would cap the content at
+          1098px and shrink the desktop design (border-box). See faq.tsx. */}
+      <div className="flex w-full max-w-[1146px] flex-col items-center gap-[20px]">
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex w-[628px] flex-col items-center gap-[25px] text-center text-white max-md:w-full">
           <h2
@@ -55,15 +59,22 @@ export default function Pricing() {
           </p>
         </div>
 
-        {/* ── Cards ──────────────────────────────────────────────────────── */}
-        <div className="relative h-[772.535px] w-full max-md:h-auto max-md:flex max-md:flex-col max-md:items-center">
+        {/* ── Cards ──────────────────────────────────────────────────────────
+            The two cards are absolutely placed and 555px each, with the second
+            at left-[591px] — so the pair needs the full 1146px column, i.e. a
+            1194px viewport, before they stop overlapping. The stack therefore
+            takes over at `xl` (1280) rather than `md`: it is the first built-in
+            breakpoint above that 1194px floor, so the side-by-side design only
+            renders where it actually fits. 1280→1400 stacking is deliberate
+            slack — well inside the "≥1400px identical" guarantee. */}
+        <div className="relative h-[772.535px] w-full max-xl:h-auto max-xl:flex max-xl:flex-col max-xl:items-center">
           {/* Subscription — anchored plan (node 469:783) */}
           <PlanCard
             data-pricing-card
             plan={SUBSCRIPTION}
             cta="start managed services"
             ctaVariant="solid"
-            className="left-0 top-[79px] max-md:mb-[40px]"
+            className="left-0 top-[79px] max-xl:mb-[40px]"
             // ⚠️ PLACEHOLDER PRICE. The design shipped a real number ($5,995/mo)
             // for the PREVIOUS brand's product. KiwiKoru publishes no pricing
             // anywhere, so quoting a figure here would invent commercial terms a
@@ -86,7 +97,7 @@ export default function Pricing() {
               (node 469:820). White gradient pill with the CTA's inset shadow. */}
           <div
             data-pricing-badge
-            className="absolute left-[179.5px] top-[66px] flex items-center justify-center rounded-[32px] bg-gradient-to-b from-white to-[#efefef] px-[20px] py-[5px] shadow-[inset_0px_-2px_1px_0px_#f2f2f2,inset_0px_-2px_2px_0px_rgba(0,0,0,0.5)] max-md:relative max-md:order-first max-md:left-auto max-md:top-auto max-md:z-10 max-md:-mb-[13px]"
+            className="absolute left-[179.5px] top-[66px] flex items-center justify-center rounded-[32px] bg-gradient-to-b from-white to-[#efefef] px-[20px] py-[5px] shadow-[inset_0px_-2px_1px_0px_#f2f2f2,inset_0px_-2px_2px_0px_rgba(0,0,0,0.5)] max-xl:relative max-xl:order-first max-xl:left-auto max-xl:top-auto max-xl:z-10 max-xl:-mb-[13px]"
           >
             <span className="whitespace-nowrap text-[14px] font-light text-[#263138]">
               most clients start here
@@ -118,7 +129,7 @@ export default function Pricing() {
               (node 469:855). Decorative; the gradient fades it in from the left. */}
           <ConnectorArrow
             data-pricing-arrow
-            className="pointer-events-none absolute left-[539px] top-0 h-[156px] w-[329.5px] max-md:hidden"
+            className="pointer-events-none absolute left-[539px] top-0 h-[156px] w-[329.5px] max-xl:hidden"
           />
         </div>
 
@@ -198,7 +209,11 @@ function PlanCard({
 } & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`absolute w-[555px] overflow-clip rounded-[20px] border-[1.5px] border-solid border-white/30 bg-gradient-to-b from-black/10 to-black/5 shadow-[inset_0_0_0_999px_rgba(255,255,255,0.06)] max-md:static max-md:w-full ${className ?? ""}`}
+      // Stacked below xl (see the Cards comment above). `max-w-[555px]` caps the
+      // stacked card at its DESIGN width so it never stretches to the full 1146px
+      // column on a tablet; it only starts shrinking below a ~603px viewport,
+      // which is inside the md band where the inner widths already go fluid.
+      className={`absolute w-[555px] overflow-clip rounded-[20px] border-[1.5px] border-solid border-white/30 bg-gradient-to-b from-black/10 to-black/5 shadow-[inset_0_0_0_999px_rgba(255,255,255,0.06)] max-xl:static max-xl:w-full max-xl:max-w-[555px] ${className ?? ""}`}
       {...rest}
     >
       <div className={`mx-auto flex w-[408px] flex-col items-center gap-[30px] max-md:w-full max-md:gap-[24px] max-md:px-6 max-md:py-[36px] ${columnPadY}`}>

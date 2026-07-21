@@ -90,7 +90,13 @@ export default function BrandAura() {
     <div
       ref={wrapRef}
       aria-hidden
-      className="pointer-events-none absolute -bottom-[1.5px] -top-[1.5px] left-[303.5px] z-0 w-[173px]"
+      // Horizontal placement is PROPORTIONAL, matching the matrix's `fr` column
+      // tracks (comparison.tsx): the panel highlights the "kiwikoru" column, so
+      // it has to track that column as the card narrows. 303.5/1360 and 173/1360
+      // — the design pixels over the 1360px card — so at design width this still
+      // lands exactly on 303.5px wide 173px. If the column tracks change, these
+      // change with them.
+      className="pointer-events-none absolute -bottom-[1.5px] -top-[1.5px] left-[22.3161765%] z-0 w-[12.7205882%]"
     >
       {/* Soft rainbow bloom hugging the border (the glow) — a masked edge-ring
           blurred by its PARENT (filter runs before mask on one element, which

@@ -51,11 +51,20 @@ export default function Faq() {
       // rhythm scales with the viewport but stays consistent across sections
       // (see comparison.tsx for the rationale). Mobile keeps its full-height
       // layout + 20dvh padding, untouched.
-      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden py-[25dvh] max-md:py-[20dvh]"
+      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden px-6 py-[25dvh] max-md:py-[20dvh]"
     >
       {/* Content block (526:412), flow-centred so a viewport shorter than the
-          stack grows the section (page scrolls) instead of clipping it. */}
-      <div className="flex w-[1128px] flex-col items-center gap-[52px] max-md:w-full max-md:gap-[32px] max-md:px-6">
+          stack grows the section (page scrolls) instead of clipping it.
+          CAPPED-FLUID, not fixed: `w-full max-w-[1128px]` resolves to exactly
+          1128px whenever there's room (identical to the old `w-[1128px]`) but
+          SHRINKS below that instead of centre-cropping against the section's
+          overflow-hidden. That band — 768→1176 — is every iPad and 13" laptop;
+          see docs/responsive-system.md §2.
+          ⚠️ The 24px gutter lives on the SECTION, not here. Tailwind boxes are
+          border-box, so `max-w-[1128px] px-6` would cap the CONTENT at 1080px
+          and silently shrink the desktop design by 48px. Gutter on the parent,
+          cap on the child — same pattern as service-list.tsx. */}
+      <div className="flex w-full max-w-[1128px] flex-col items-center gap-[52px] max-md:gap-[32px]">
         {/* Word-by-word blur reveal on the heading (see faq-reveal.tsx). */}
         <FaqReveal />
 

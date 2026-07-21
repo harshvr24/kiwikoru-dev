@@ -33,10 +33,24 @@ import {
  * scrolled frame over a sky-only backdrop; docs/backdrop-filter-sweep.md).
  */
 
+// The design width the matrix was authored against (Figma 469:553). Every
+// horizontal measurement below is expressed as a FRACTION of this, so the card
+// can be any width and still reproduce the design exactly at 1360px.
+const CARD_W = 1360;
+
 // Column-divider x-positions (Figma Line223), for the three right-hand columns
 // only: consultancy | freelance | hosting left edges. The label|kiwikoru and
 // kiwikoru|in-house dividers are the highlight panel's own left/right edges.
+//
+// ⚠️ These are overlay lines, NOT grid children — nothing keeps them in step
+// with the column tracks automatically. They are emitted as PERCENTAGES of the
+// card width so they track the proportional grid below; if you ever change a
+// track, recompute these from the same numbers or the hairlines will drift off
+// the column boundaries as the card narrows.
 const DIVIDER_X = [713.5, 899.5, 1111.5];
+
+/** A design-space x (in 1360-space) as a percentage of the card width. */
+const pct = (x: number) => `${(x / CARD_W) * 100}%`;
 
 function CellContent({ cell }: { cell: ComparisonCell }) {
   if (cell === "check") return <CheckMark className="h-[30px] w-[30px]" />;
@@ -64,29 +78,34 @@ export default function Comparison() {
       // their content height (a fixed viewport section made sparse content float
       // in far more air than dense content). Mobile keeps its full-height layout
       // (max-md:min-h-dvh) + its own padding, untouched.
-      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden py-[25dvh] max-md:py-[12dvh]"
+      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden px-6 py-[25dvh] max-md:py-[12dvh]"
     >
       {/* Content block (Figma 469:646, 812×1360), flow-centred so a viewport
           shorter than the block grows the section (page scrolls) instead of
           clipping it. Header and card are pinned inside (top:0 / top:211) rather
-          than flow-spaced, matching the design's explicit positions. */}
-      <div className="relative h-[812px] w-[1360px] max-md:h-auto max-md:w-full max-md:flex max-md:flex-col max-md:items-center max-md:gap-[32px] max-md:px-6">
+          than flow-spaced, matching the design's explicit positions.
+          CAPPED-FLUID: resolves to exactly 1360px when there's room, shrinks
+          below instead of centre-cropping. Everything inside the matrix is
+          proportional (see the grid + DIVIDER_X), so the whole composition
+          scales with this box down to the lg breakpoint, where the stack takes
+          over. Gutter is on the section — border-box, see faq.tsx. */}
+      <div className="relative h-[812px] w-full max-w-[1360px] max-lg:h-auto max-lg:flex max-lg:flex-col max-lg:items-center max-lg:gap-[32px]">
         {/* Word-by-word blur reveal on the heading (see comparison-reveal.tsx). */}
         <ComparisonReveal />
         {/* Heading + supporting copy (469:550), pinned to the top and centred. */}
-        <div className="absolute left-1/2 top-0 flex w-[628px] -translate-x-1/2 flex-col items-center gap-[25px] text-center text-white max-md:static max-md:w-full max-md:translate-x-0 max-md:gap-[18px]">
+        <div className="absolute left-1/2 top-0 flex w-[628px] max-w-full -translate-x-1/2 flex-col items-center gap-[25px] text-center text-white max-lg:static max-lg:w-full max-lg:translate-x-0 max-lg:gap-[18px]">
           <h2
             data-comparison-head
             className="text-display leading-[1.1] tracking-[-0.03em]"
           >
-            <span className="block whitespace-nowrap font-light max-md:whitespace-normal">
+            <span className="block whitespace-nowrap font-light max-lg:whitespace-normal">
               hire, outsource, or wing it?
             </span>
             <span className="block font-instrument">none of the above.</span>
           </h2>
           <p
             data-comparison-sub
-            className="w-[567px] text-body leading-normal tracking-[0.02em] max-md:w-full"
+            className="w-[567px] max-w-full text-body leading-normal tracking-[0.02em] max-lg:w-full"
           >
             hiring a cloud engineer takes months. consultancies scope for a
             quarter. hosting support closes your ticket. there&rsquo;s a fourth
@@ -101,7 +120,7 @@ export default function Comparison() {
             the rounded corners, so nothing else needs clipping. */}
         <div
           data-comparison-card
-          className="absolute left-0 top-[211px] h-[601px] w-[1360px] rounded-[20px] border-[1.5px] border-solid border-white/30 bg-gradient-to-b from-black/10 to-black/5 shadow-[inset_0_0_0_999px_rgba(255,255,255,0.06)] max-md:hidden"
+          className="absolute left-0 top-[211px] h-[601px] w-full rounded-[20px] border-[1.5px] border-solid border-white/30 bg-gradient-to-b from-black/10 to-black/5 shadow-[inset_0_0_0_999px_rgba(255,255,255,0.06)] max-lg:hidden"
         >
           {/* Featured-column highlight (469:554): a brighter panel behind the
               grid over the "kiwikoru" track, at full card height, wearing the
@@ -117,13 +136,21 @@ export default function Comparison() {
               key={x}
               aria-hidden
               className="pointer-events-none absolute bottom-0 top-[13.5px] z-0 w-px bg-white/10"
-              style={{ left: `${x}px` }}
+              style={{ left: pct(x) }}
             />
           ))}
 
-          {/* The matrix. Tracks are the exact Figma pixel gaps so the row
-              hairlines land on the design's divider positions. */}
-          <div className="relative z-10 grid h-full w-full grid-cols-[302.5px_174px_237px_186px_212px_248.5px] grid-rows-[80.5px_81px_80px_88px_88px_88px_95.5px]">
+          {/* The matrix. Column tracks are the exact Figma pixel gaps expressed
+              as `fr` RATIOS rather than px: the numbers are unchanged (302.5,
+              174, … sum to 1360), so at a 1360px card each track resolves to
+              precisely its design width — but the grid now fills whatever width
+              the card has, instead of overflowing a narrower one.
+              `minmax(0,…)` is load-bearing: a bare `Nfr` track still floors at
+              its content's min-content width, so a long cell string ("managed
+              hosting") would refuse to shrink and push the grid wider than the
+              card. The explicit 0 floor lets text wrap instead.
+              Row tracks stay in px — vertical space is not the constraint. */}
+          <div className="relative z-10 grid h-full w-full grid-cols-[minmax(0,302.5fr)_minmax(0,174fr)_minmax(0,237fr)_minmax(0,186fr)_minmax(0,212fr)_minmax(0,248.5fr)] grid-rows-[80.5px_81px_80px_88px_88px_88px_95.5px]">
             {/* Header row: empty label cell, then the column names. */}
             <div />
             {COMPARISON_COLUMNS.map((name) => (
@@ -144,15 +171,20 @@ export default function Comparison() {
           </div>
         </div>
 
-        {/* ── Mobile stack (below md) ─────────────────────────────────────
-            The wide grid can't shrink to a phone (long text cells across 6
+        {/* ── Stacked matrix (below lg) ────────────────────────────────────
+            The wide grid can't shrink indefinitely (long text cells across 6
             tracks), so the matrix is rebuilt as one glass card per feature, each
             listing all five options with kiwikoru featured on top. The desktop card
-            above is max-md:hidden; this is hidden max-md:flex. Carries
-            data-comparison-card so the reveal blur-rises it too. */}
+            above is max-lg:hidden; this is hidden max-lg:flex. Carries
+            data-comparison-card so the reveal blur-rises it too.
+            The boundary is `lg` (1024), NOT `md`: the proportional grid above
+            stays legible down to about there, but at iPad-portrait width the six
+            columns squeeze the text to unreadable ribbons. This stack — already
+            built for phones — is simply the better layout for a narrow tablet
+            too, so it takes over earlier. */}
         <div
           data-comparison-card
-          className="hidden w-full max-w-[520px] flex-col gap-[16px] max-md:flex"
+          className="hidden w-full max-w-[520px] flex-col gap-[16px] max-lg:flex"
         >
           {COMPARISON_ROWS.map((row) => (
             <div

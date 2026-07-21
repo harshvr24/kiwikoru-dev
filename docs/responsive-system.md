@@ -1,25 +1,34 @@
-# Responsive system (mobile pass)
+# Responsive system
 
-**Status:** proposal — awaiting approval. No code has been written against this yet.
+**Status:** shipped, in two passes.
+1. **Mobile pass** (< 768px) — the bulk of §5–§7 below.
+2. **Tablet pass** (768–1408px) — §2.1. Added 2026-07-22 because the mobile pass
+   left this band rendering the desktop design and centre-cropping it.
 
 This is the single source of truth for making the site responsive. Every section
 follows the rules here so the result is consistent instead of hand-tuned per
-section. Read this before touching any section for mobile.
+section. Read this before touching any section for responsiveness.
 
 ---
 
 ## 1. Scope & guarantees
 
-- **Desktop is frozen.** The layout at **≥ 768px renders byte-for-byte identical
-  to today.** The wide-screen behaviour the design was authored for — content at
-  its fixed design pixels, centred, the fixed `<Background/>` sky/clouds
-  expanding around it — is explicitly *not* touched. This pass adds a mobile
-  layer *below* 768px only.
-- **Mobile-only, CSS-only.** All responsive behaviour is expressed with Tailwind
-  `max-md:*` variants and media-query token overrides. **No JS breakpoint
-  branching in the render path** (no `innerWidth` / `navigator` reads to choose
-  layout) — that would violate the codebase's SSR-stability contract and risk
-  hydration mismatches. A stable server render + pure CSS media queries only.
+- **⚠️ The old "desktop is frozen at ≥768px" guarantee is DEAD.** It read:
+  *"the layout at ≥768px renders byte-for-byte identical to today."* That promise
+  is what left every iPad broken — it forbade touching the exact band where the
+  1512px design does not fit. It has been replaced by:
+
+  > **The layout at ≥1408px renders as it was authored.** Below that, sections
+  > reflow.
+
+  1408px = the widest design block (1360px) + the 48px gutter. Every real
+  desktop and laptop target (1440, 1512, 1728, 1920) is above it, so nothing the
+  design was actually authored on has changed.
+- **CSS-only.** All responsive behaviour is expressed with Tailwind variants and
+  media-query token overrides. **No JS breakpoint branching in the render path**
+  (no `innerWidth` / `navigator` reads to choose layout) — that would violate the
+  codebase's SSR-stability contract and risk hydration mismatches. A stable
+  server render + pure CSS media queries only.
 - **No architecture regressions.** Responsive changes are layout-only. In
   particular: never introduce a `filter` / `backdrop-filter` on an ancestor of
   the fixed background layers (breaks `position: fixed`), and don't alter any
@@ -27,20 +36,53 @@ section. Read this before touching any section for mobile.
 
 ---
 
-## 2. The breakpoint
+## 2. The breakpoints
 
-**One breakpoint: `md` = 768px** (Tailwind's default; already the site's mobile
-boundary for clouds and glass).
+| Variant | Range | Role |
+|---|---|---|
+| `max-md:*` | < 768px | Phones. The original mobile pass. |
+| `max-lg:*` | < 1024px | Layouts that must abandon multi-column before iPad portrait. |
+| `max-xl:*` | < 1280px | Two-up card layouts that need ~1194px to sit side by side. |
+| `max-wide:*` | **< 1408px** | The 1360px design blocks. **The only custom token.** |
 
-- `max-md:*` → applies **below 768px** ("mobile"). This is where all our
-  overrides live.
-- Everything unprefixed → the untouched desktop design.
-- A second breakpoint (`sm` = 640px) may be added **per-section, only when a
-  section genuinely needs a phone-vs-small-tablet difference.** Default to the
-  single 768 boundary; reach for `sm` only with a concrete reason, and note it in
-  that section's mini-plan.
+`--breakpoint-wide: 1408px` is defined in `globals.css`'s `@theme` block, and it
+is the single addition to Tailwind's defaults. It exists because no built-in sits
+at the fitting width of a 1360px block: `xl` (1280) is too small and `2xl` (1536)
+would drag 1440px and 1512px laptops into the reflow.
 
-No new breakpoint tokens are defined — we use Tailwind defaults as-is.
+**Pick the widest boundary a section actually needs** — a section whose content
+fits down to 900px should not be reflowing at 1408.
+
+### 2.1 The tablet pass — three mechanisms
+
+Applied in increasing order of risk. Most sections need only the first.
+
+1. **Capped-fluid containers.** `w-[1128px]` → `w-full max-w-[1128px]`, with the
+   24px gutter on the **section**. Resolves to the identical pixel width wherever
+   there is room, shrinks instead of cropping below.
+   ⚠️ The gutter must NOT go on the capped box itself: Tailwind is border-box, so
+   `max-w-[1128px] px-6` caps the *content* at 1080px and silently shrinks the
+   desktop design by 48px.
+2. **Proportional geometry.** Fixed grid tracks → the same numbers as `fr`
+   (`minmax(0,302.5fr)…` — the `0` floor is required, or a long cell refuses to
+   shrink); absolute px offsets → percentages of the design width. At the design
+   width these resolve to the original pixels *exactly*, so desktop is unchanged
+   by construction. See `comparison.tsx` (`CARD_W`/`pct`) and `testimonials.tsx`
+   (`GROUP_W`/`groupX`).
+   ⚠️ Overlay elements that are not grid children — `DIVIDER_X`, `BrandAura` —
+   do **not** follow the tracks automatically. Convert them in the same edit.
+3. **Reflow, then scale only as a last resort.** Prefer re-arranging (a wrapping
+   flex row keeps `cards`' 440px media at full size and just goes 3-up → 2-up →
+   1-up). Scale only where the guts are rigidly px-tuned against live GSAP and
+   genuinely cannot reflow: `why-stay`, the `design-shots` wheel, and `cards`
+   below 488px.
+
+⚠️ **Scale values are CONSTANTS behind stepped media queries — never derived from
+`100vw` inside `calc()`.** globals.css §"Design-shots conveyor scale" documents
+why: on iOS a `tan(atan2(100vw − 48px, …))` fit resolved against the
+*overflow-expanded* layout width and rendered the wheel at ~0.87 instead of ~0.4.
+Media-query widths are reliable cross-browser; `vw` in `calc()` is not when
+content overflows — and in this band, content overflows.
 
 ---
 
@@ -194,6 +236,33 @@ Recipe:
 | `footer`       | B | ✅ Already fluid by construction: `w-full` + `aspect-[1512/1243]` box holding a baked full-composite poster (`<Image fill object-cover>`, image aspect = box aspect → no crop), a full-width wordmark that scales with the viewport, and no flow text. The ≤768px gate already serves the poster (no WebGL) and the reveal is pixel-free. Only change: below md the box shortens to `aspect-[1512/900]` + `object-bottom` to trim the tall empty-sky headroom (dead space next to short scaled peaks on a phone) while keeping the full wordmark + mountains; ≥md unchanged (box aspect = image aspect → `object-bottom` is a no-op). |
 | `testimonials` | B | ✅ The 3D rock canvas is already gated off ≤768px (flat PNG rocks below md), so mobile is pure DOM. The centred 1239×595 group is ~3× the phone width, so below md the block fills the section (`absolute inset-0`) and the four rocks + their orbit rings/dots re-anchor to the real viewport corners to frame the quote — each unit carries a mobile centre + scale (`mx`/`my`/`ms` in testimonials-data.ts) switched in via CSS vars (pills pattern); the scale rides the unit wrapper so the ring's revolve/reveal (on `[data-tm-ring]` inside) stays free, and the rock reads the same trio so rock+ring stay concentric. The quote **decouples** from the group and centres in the viewport at the fluid `text-display` token (scaling the whole group would shrink the quote to ~14px — unreadable). Reveal/quote-cycle untouched; on mobile the drift driver reproduces the desktop canvas entrance in the DOM — each PNG rock **flies in** from off-screen along its outward direction (`[data-tm-fly]`, GSAP x/y, shared REVEAL timing so it lands just before its ring draws in) and **spins** in the **opposite** direction of its ring (`[data-tm-rock]`), so rock and orbit counter-rotate. Rock markup is three independent transform levels (position+fly / scale / spin) so none fight. All `[data-tm-*]` rock layers are only in the fallback DOM — desktop rocks tumble in the canvas. |
 | `cards`        | B | ✅ The three 440×438 media cards (media guts rigidly px-tuned with live GSAP) can't go fluid, so below md they reflow to a centred vertical stack, each card scaled to fit as ONE unit (why-stay's "scale, don't rebuild"). Each card sits in a `[data-card-scale]` wrapper — a plain `shrink-0` flex item on desktop (byte-identical: the same 440-wide item the article was) and the scale carrier on mobile. The scale rule lives in **globals.css** ("Card stack scale" block, keyed off `[data-cards-row]`): `--card-s = min(1, tan(atan2(100vw−48px, 440px)))` with a `0.72` fallback line before it (engines without `tan/atan2` drop the invalid later value and keep the number). `tan(atan2(a,b))≡a/b` is used because `scale()` needs a unitless number and CSS calc can't divide a vw-length by a length to get one. origin-top `scale()` + a negative `margin-bottom` collapsing the leftover layout height packs the stack tight. Scale is on the wrapper, not `[data-card-shell]`, so `cards-reveal`'s transform/blur on the article stays free. (First cut put the scale in Tailwind `max-md:` classes with `display:contents` wrappers — the `contents`→`block` swap didn't win the cascade, so the transform never landed and the cards stayed full-width/cropped; moving to globals.css with a real wrapper fixed it.) Section un-pins to `flex-col`, heading un-pins + token-sized. ⚠️ backdrop-blur (shell + shot tiles) under `scale` needs real-device verification (same caveat as why-stay). |
+
+---
+
+## 7.1 Tablet pass — what changed per section (2026-07-22)
+
+The §7 register above describes the **phone** treatment and is still accurate.
+This is the 768–1408px layer added on top of it.
+
+| Section | Boundary | Treatment |
+|---|---|---|
+| `faq` | — | Capped-fluid column (1128). Fluid at every width; no breakpoint needed. |
+| `pricing` | `xl` | Column capped-fluid (1146). The two 555px cards need 1194px to sit side by side, so the stack takes over at 1280; the stacked card caps at its 555px design width so it never stretches. |
+| `comparison` | `lg` | Block capped-fluid (1360); grid tracks → `fr`; `DIVIDER_X` + `BrandAura` → percentages. Proportional down to 1024, where the existing per-feature stack takes over — six columns of long text are unreadable narrower than that. |
+| `testimonials` | — | Group capped-fluid (1239.771); ring/dot offsets and the quote box → percentages of the group. The 3D rock canvas is untouched: its track is already `120vw × 120vh`. |
+| `cards` | `wide` | Row goes static and **wraps** — cards keep their exact 440px width, so no media guts are scaled. 3-up → 2-up → 1-up. Heading un-pins on the same boundary. |
+| `pills` | — | Decorative field; the all-sides edge-fade mask now applies below 1367px so clipped pills dissolve rather than being cut on a hard line. |
+| `why-stay` | `md:max-[924px]` | One intermediate scale step (0.8) for the 768–924 band, between the design size and the phone's 0.4. |
+| `hero` (design-shots) | 768–1077 | Intermediate wheel scale 0.78 with the coupled lift −40px (`translateY = 207.5·s − 201.5`). |
+| `service-list`, `why-us-pillars` | `lg` | 3-up → 2-up → 1-up. `contact-card` deliberately keeps 3-up to `md`: three short cards still read at ~227px. |
+
+⚠️ **The 768px boundary also exists in JS, and the two must not drift.**
+`navbar.tsx` (`MOBILE_MQ`), `page-header.tsx` (`SMALL_SCREEN`, gates the WebGL
+glass headings), `testimonial-rocks.tsx` (`SMALL_SCREEN`, gates the 3D rocks) and
+`cloud-layer.tsx` all branch on 768 in `matchMedia`, not CSS. The tablet pass left
+every one of them at 768 **deliberately** — an iPad is capable enough for the
+glass, the clouds and the 3D rocks, and moving them would degrade a capable
+device. If you ever change one, change the CSS in the same commit.
 
 ---
 

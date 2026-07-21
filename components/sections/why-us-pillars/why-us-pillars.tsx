@@ -37,7 +37,10 @@ export default function WhyUsPillars() {
       className="relative flex w-full justify-center overflow-hidden px-6 pb-[12dvh]"
     >
       <RevealOnScroll selector="[data-pillar-card]" />
-      <div className="grid w-full max-w-[1146px] grid-cols-3 gap-[20px] max-md:grid-cols-1 max-md:gap-[16px]">
+      {/* 3-up → 2-up at lg → 1-up on phones. The middle step matters: without it
+          an iPad drops straight to a single stretched column. Same ladder as
+          service-list.tsx. */}
+      <div className="grid w-full max-w-[1146px] grid-cols-3 gap-[20px] max-lg:grid-cols-2 max-md:grid-cols-1 max-md:gap-[16px]">
         {PILLARS.map((p) => (
           <GlassCard
             key={p.name}

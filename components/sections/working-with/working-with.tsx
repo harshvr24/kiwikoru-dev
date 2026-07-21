@@ -37,7 +37,7 @@ export default function WorkingWith() {
       // viewport but staying CONSISTENT with the other sections instead of the
       // near-double air a fixed full-viewport section gave this sparse content
       // (see comparison.tsx). Mobile keeps its full-height layout.
-      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden py-[25dvh] max-md:py-[12dvh]"
+      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden px-6 py-[25dvh] max-md:py-[12dvh]"
     >
       {/* Word-by-word headline reveal + serif flourish + paragraph blur-in;
           renders nothing, drives the [data-ww-*] nodes below. */}
@@ -46,7 +46,9 @@ export default function WorkingWith() {
       {/* Centred statement block (design frame 423:464), flow-centred by the
           section's flex so its height drives the section (no absolute centring
           in a forced-full-height parent). */}
-      <div className="flex w-[726px] flex-col items-center gap-[48px] text-center text-white max-md:w-full max-md:gap-[32px] max-md:px-6">
+      {/* Capped-fluid (726 needs a 774px viewport to clear the gutter), so this
+          never overflows the narrow tablet band. Gutter on the section. */}
+      <div className="flex w-full max-w-[726px] flex-col items-center gap-[48px] text-center text-white max-md:gap-[32px]">
         {/* Headline — Product Sans Light with an Instrument Serif "working".
             Each word is an inline-block span so it can rise/blur independently;
             the serif word carries data-ww-serif for its distinct settle+glow. */}

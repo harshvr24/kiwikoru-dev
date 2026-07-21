@@ -20,7 +20,7 @@ export default function Cards() {
   return (
     <section
       data-cards
-      className="relative min-h-dvh w-full overflow-hidden max-md:flex max-md:flex-col max-md:items-center max-md:gap-[40px] max-md:py-[80px]"
+      className="relative min-h-dvh w-full overflow-hidden max-wide:flex max-wide:flex-col max-wide:items-center max-wide:justify-center max-wide:gap-[40px] max-wide:px-6 max-wide:py-[80px]"
     >
       {/* Section heading (Figma 302:1446): "ground to launch in days" — floats
           303px above the card-row centre. Client component: it blur-reveals word
@@ -33,20 +33,28 @@ export default function Cards() {
       <CardsReveal />
 
       {/*
-        Below md the 1360px-wide centred row reflows to a vertical stack, each
-        card scaled to fit the phone as ONE unit (media guts + their GSAP
-        animations shrink together — the why-stay "scale, don't rebuild" call).
+        THREE regimes, because a card's media guts are rigidly px-tuned against
+        live GSAP and cannot be made fluid (the why-stay "scale, don't rebuild"
+        call):
+
+        ≥ wide (1408) — the design: one centred absolute row, 3×440 + 2×20 gaps.
+        768 → wide    — the row goes static and WRAPS. The cards keep their exact
+                        440px width, so nothing inside them is touched or scaled;
+                        they simply re-arrange 3-up → 2-up → 1-up as the viewport
+                        narrows. This is real reflow, not shrinking, which is why
+                        the media stays legible on an iPad.
+        < 768         — the phone stack: one column, each card scaled to fit as a
+                        unit (globals.css "Card stack scale"). Below ~488px a
+                        440px card no longer fits any other way.
+
         Each card sits in a [data-card-scale] wrapper: a plain shrink-0 flex item
-        on desktop (byte-identical — same 440-wide item the article was), and the
-        scale carrier on mobile. The scale/origin/margin live in globals.css
-        (keyed off [data-cards-row]/[data-card-scale]) so we get a tan/atan2
-        fallback and don't depend on Tailwind emitting an arbitrary transform;
-        see the "Card stack scale" block there. Scale rides the WRAPPER, not
-        [data-card-shell], so the article's transform stays free for the reveal.
+        until the phone stack, where it becomes the scale carrier. Scale rides the
+        WRAPPER, not [data-card-shell], so the article's transform stays free for
+        the reveal.
       */}
       <div
         data-cards-row
-        className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 gap-[20px] max-md:static max-md:translate-x-0 max-md:translate-y-0 max-md:flex-col max-md:items-center max-md:gap-[24px]"
+        className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 gap-[20px] max-wide:static max-wide:translate-x-0 max-wide:translate-y-0 max-wide:flex-wrap max-wide:justify-center max-md:flex-col max-md:items-center max-md:gap-[24px]"
       >
         {/* The three card TITLES are the visible step labels (assess → migrate →
             manage). The component names and CARD_COPY keys still read

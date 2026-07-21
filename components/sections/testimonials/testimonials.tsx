@@ -27,6 +27,16 @@ import { TESTIMONIALS, UNITS } from "./testimonials-data";
  * Geometry (UNITS) lives in testimonials-data.ts so the rings here and the rocks
  * in the canvas share one source of truth.
  */
+
+// The group's design size (Figma `TestimonialRocks`). The box is capped-fluid, so
+// every offset inside is emitted as a fraction of these — at the design size the
+// fractions resolve to the original px exactly, and below it the composition
+// compresses with the box rather than hanging off the edges.
+const GROUP_W = 1239.771;
+const GROUP_H = 595.775;
+const groupX = (x: number) => `${(x / GROUP_W) * 100}%`;
+const groupY = (y: number) => `${(y / GROUP_H) * 100}%`;
+
 export default function Testimonials() {
   const { quote, attribution } = TESTIMONIALS[0];
 
@@ -40,13 +50,18 @@ export default function Testimonials() {
       // min-h-dvh so the rocks re-anchor to the real viewport corners
       // (max-md:inset-0 below); the block is absolute there, so the padding
       // doesn't affect the mobile height.
-      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden py-[25dvh]"
+      className="relative flex max-md:min-h-dvh w-full items-center justify-center overflow-hidden px-6 py-[25dvh] max-md:px-0"
     >
       {/* Centre-anchored design block = the Figma TestimonialRocks group. Below
           md it fills the section (absolute inset-0) so the four rocks re-anchor
           to the REAL viewport corners around the reflowed quote, instead of the
-          1239px group's off-screen corners. */}
-      <div className="relative h-[595.775px] w-[1239.771px] max-md:absolute max-md:inset-0 max-md:h-auto max-md:w-auto">
+          1239px group's off-screen corners.
+          CAPPED-FLUID between those two regimes: at ≥1288 this is exactly
+          1239.771px (unchanged), and below it the box narrows so the group stops
+          hanging off both edges. Everything positioned inside is expressed as a
+          PERCENTAGE of the group (see UNITS and the quote), so the composition
+          compresses with the box instead of clipping. */}
+      <div className="relative h-[595.775px] w-full max-w-[1239.771px] max-md:absolute max-md:inset-0 max-md:h-auto max-md:w-auto max-md:max-w-none">
         {/* Rocks — 3D GLB canvas (capable devices) or flat PNG fallback.
             Rendered FIRST so the rings below paint on top of it. */}
         <TestimonialRocks />
@@ -68,8 +83,13 @@ export default function Testimonials() {
             className="pointer-events-none absolute left-[var(--x)] top-[var(--y)] max-md:left-[var(--mx)] max-md:top-[var(--my)] max-md:origin-top-left max-md:[transform:scale(var(--ms))]"
             style={
               {
-                "--x": `${u.cx}px`,
-                "--y": `${u.cy}px`,
+                // PERCENTAGES of the group box, not px: the box is capped-fluid
+                // now, so a px offset would keep its distance from the (moving)
+                // left edge and march the right-hand rings off the card as the
+                // group narrows. At the design size these resolve to exactly the
+                // original px. See GROUP_W in testimonials-data.ts.
+                "--x": groupX(u.cx),
+                "--y": groupY(u.cy),
                 "--mx": u.mx,
                 "--my": u.my,
                 "--ms": u.ms,
@@ -104,7 +124,10 @@ export default function Testimonials() {
             49px mixed-font heading treatment as the sibling sections; below md it
             decouples from the group and centres in the viewport at the fluid
             token size (the group scale would shrink it to ~14px — unreadable). */}
-        <div className="absolute left-[120px] top-[244px] w-[1000px] text-center max-md:left-0 max-md:right-0 max-md:top-1/2 max-md:w-auto max-md:-translate-y-1/2 max-md:px-6">
+        {/* left 120 / width 1000 of the 1239.771 group, as percentages — the one
+            piece of real CONTENT in this section, so it must never be the thing
+            that gets clipped. At design size these are the original px. */}
+        <div className="absolute left-[9.6792%] top-[244px] w-[80.6600%] text-center max-md:left-0 max-md:right-0 max-md:top-1/2 max-md:w-auto max-md:-translate-y-1/2 max-md:px-6">
           <p
             data-testimonials-quote
             className="relative z-10 text-display font-light leading-[1.1] tracking-[-0.03em] text-white [word-break:break-word]"

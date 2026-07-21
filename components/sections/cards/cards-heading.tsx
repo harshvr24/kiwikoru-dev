@@ -79,7 +79,10 @@ export default function CardsHeading() {
   return (
     <h2
       ref={ref}
-      className="absolute left-1/2 top-[calc(50%_-_303px)] w-max -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-product text-display font-light leading-[1.1] tracking-[-0.03em] text-white max-md:static max-md:left-auto max-md:top-auto max-md:w-full max-md:translate-x-0 max-md:translate-y-0 max-md:whitespace-normal max-md:px-6"
+      // Un-pins at `wide`, in lockstep with the card row (cards.tsx): once the
+      // row goes static and wraps, a heading absolutely placed 303px above the
+      // row's old centre would float over the cards instead of above them.
+      className="absolute left-1/2 top-[calc(50%_-_303px)] w-max -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-product text-display font-light leading-[1.1] tracking-[-0.03em] text-white max-wide:static max-wide:left-auto max-wide:top-auto max-wide:w-full max-wide:translate-x-0 max-wide:translate-y-0 max-wide:whitespace-normal"
     >
       {"on aws in "}
       <span className="font-instrument">weeks</span>
