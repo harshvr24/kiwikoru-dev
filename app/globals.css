@@ -1,0 +1,531 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* ─── Sky mode palette (theme controller) ──────────────────────────────────
+   The vertical sky-gradient stops for the current time-of-day mode, consumed by
+   the fixed <Background/> layer. These are the RESTING values for each mode:
+   they render the correct sky on first paint / SSR / no-JS, keyed off the
+   `data-mode` attribute a pre-paint inline script stamps on <html> (layout.tsx).
+   On a user-initiated switch, ThemeDriver GSAP-tweens INLINE overrides of these
+   same three vars on <html> for the crossfade — the inline style wins over these
+   rules during the animation, then rests on the new mode's values.
+
+   MUST stay in sync with PALETTES in lib/theme/palette.ts (the source of truth).
+   The bare :root default is `day`, so a document with no data-mode still paints
+   the brand sky. */
+:root,
+html[data-mode="day"] {
+  --sky-top: #4a9dff;
+  --sky-mid: #62abff;
+  --sky-bottom: #9cc9ff;
+  --grain-opacity: 0.1;
+}
+
+html[data-mode="sunrise"] {
+  --sky-top: #8ec0f2;
+  --sky-mid: #f4c9b0;
+  --sky-bottom: #ffe0b8;
+  --grain-opacity: 0.06;
+}
+
+html[data-mode="sunset"] {
+  --sky-top: #8f9fe0;
+  --sky-mid: #d9a9d4;
+  --sky-bottom: #ffbf9c;
+  --grain-opacity: 0.05;
+}
+
+html[data-mode="night"] {
+  --sky-top: #0e2a52;
+  --sky-mid: #1c3f6e;
+  --sky-bottom: #2d5688;
+  --grain-opacity: 0.05;
+}
+
+/* ─── Fluid type scale (mobile responsive system) ──────────────────────────
+   Source vars for the shared type tokens. The DESKTOP value is the exact design
+   pixel size, so ≥768px renders byte-for-byte unchanged; a single mobile media
+   query (matching Tailwind's `md` boundary, width < 768px) swaps in the fluid
+   clamp() values. Mapped into Tailwind text-* utilities in @theme inline below,
+   so `text-display` etc. emit `font-size: var(--fs-…)` and respond to this
+   override at runtime. Tracking is set in `em` at the call site (-0.03em headings
+   / 0.02em body) so it scales with the token — see docs/responsive-system.md §3. */
+:root {
+  --fs-display: 49px; /* section headings (9 sections share this) */
+  --fs-hero: 56px; /* hero H1 / pills lead */
+  --fs-body-lg: 20px; /* pricing / lead paragraphs */
+  --fs-body: 16px; /* body copy */
+}
+
+@media (width < 768px) {
+  :root {
+    --fs-display: clamp(28px, 7.5vw, 40px);
+    --fs-hero: clamp(32px, 9vw, 48px);
+    --fs-body-lg: clamp(16px, 4.4vw, 20px);
+    --fs-body: clamp(14px, 4vw, 16px);
+  }
+}
+
+/* Pill-field edge fade (components/sections/pills) — a vertical band so pills
+   dissolve at the top/bottom edges where the upward drift melts in/out. Below md
+   the compressed cloud (pills-data.ts) reaches the side edges too, so a left/right
+   fade is added (two mask layers intersected) — the cloud dissolves at all four
+   sides. Was an inline style; moved to a class so the mask isn't re-declared per
+   pill. */
+.pill-field-mask {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 20%,
+    rgba(0, 0, 0, 1) 80%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 20%,
+    rgba(0, 0, 0, 1) 80%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+@media (width < 768px) {
+  .pill-field-mask {
+    -webkit-mask-image:
+      linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 16%, rgba(0, 0, 0, 1) 84%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, 1) 88%, rgba(0, 0, 0, 0) 100%);
+    mask-image:
+      linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 16%, rgba(0, 0, 0, 1) 84%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 12%, rgba(0, 0, 0, 1) 88%, rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+}
+
+/* Card stack scale (components/sections/cards) — below md the three 440×438
+   glass cards can't go fluid (their media guts are rigidly px-tuned with live
+   GSAP), so each card is scaled to fit the phone as ONE unit. The scale rides
+   the per-card wrapper ([data-card-scale]), NOT the article, so cards-reveal's
+   transform/blur on [data-card-shell] stays free.
+
+   --card-s fits the 440px card into the (viewport − 48px gutter) width, capped
+   at 1 so it never scales up past design. scale() needs a UNITLESS number, and
+   CSS calc can't divide a vw-length by a length to get one — so the ratio comes
+   from the tan(atan2(a,b)) ≡ a/b identity. The plain 0.72 line before it is the
+   fallback for engines without tan/atan2: an invalid later declaration is
+   dropped and the number is kept (progressive enhancement).
+
+   transform-origin is top-center so the visual card sits centred at the top of
+   its 440×438 layout box; the negative margin-bottom collapses the leftover
+   (unscaled) box height so the vertical stack packs tight. The 440-wide box
+   overflows a narrow viewport but is clipped by the section's overflow-hidden —
+   no horizontal scroll. ≥768px this whole block is inert, so desktop (the
+   wrappers are plain shrink-0 flex items) renders byte-for-byte unchanged. */
+@media (width < 768px) {
+  [data-cards-row] {
+    --card-s: 0.72;
+    --card-s: min(1, tan(atan2(100vw - 48px, 440px)));
+  }
+
+  [data-cards-row] > [data-card-scale] {
+    transform: scale(var(--card-s));
+    transform-origin: top center;
+    margin-bottom: calc(var(--card-s) * 438px - 438px);
+  }
+}
+
+/* Design-shots conveyor scale (components/sections/hero + design-shots) — below md
+   the turning tile wheel (arc span ≈ 1042px incl. the glass mat) is far wider than a
+   phone, so it's scaled down as one unit. FIXED 0.5, deliberately NOT a fluid
+   vw-derived value.
+
+   ⚠️ Why fixed, not fit-to-width: an earlier version used
+   max(0.5, min(1, tan(atan2(100vw - 48px, 1042px)))) to fit-then-floor. On iOS the
+   `100vw` inside calc() resolved to the OVERFLOW-expanded layout width (~950px — the
+   1029px box widens the layout box `vw` reads from), NOT the ~430px visual width the
+   media query correctly reports. So the scale computed ~0.87 and the wheel rendered
+   huge, overlapping the hero text (also mis-sized in desktop Firefox, which folds the
+   scrollbar into 100vw). Lesson: media-query widths are reliable cross-browser;
+   `100vw` in calc() is NOT when content overflows. So the size is a plain media query
+   + a constant — no vw, no trig. The outer tiles clip through the viewport edges (by
+   design). The scale composes with the per-rotor conveyor rotation inside, leaving the
+   shared 8-slot geometry, the motion, and the intro handoff untouched. ≥768px inert →
+   desktop byte-identical.
+
+   The translateY restores the DESKTOP wrap illusion: on desktop the far arc slots
+   straddle the viewport's top edge, so a tile leaving far-R exits THROUGH the top edge
+   and rides the whole hidden return leg (far-R → over the top → far-L) off-screen —
+   the viewport edge is the curtain. Scaling about the wheel centre pulls every slot
+   down/inward, parking the far slots INSIDE the viewport, so the return trip cut
+   visibly across the top of the screen (the "ghost tiles" materialising mid-air).
+   Lifting the scaled wheel puts the far slots back on the top edge: tiles slide up and
+   out of the viewport, wrap unseen, and descend back in on the other side. No
+   mask/fade needed — earlier gradient dissolves treated the symptom and still read as
+   translucent tiles drifting in the sky.
+
+   scale and translateY are COUPLED — solve both from the scale s:
+     translateY  = 207.5·s − 201.5   (pins the far slots' centres ~2px above the
+                                      viewport top, matching desktop's straddle)
+     centre-tile top ≈ 192·s         (how far the wheel hangs below the wordmark)
+   s=0.5 put the centre tile at y≈96 — touching the wordmark — so s=0.6 (bigger tiles,
+   centre-tile top ≈115px), formula lift −77px, hand-tuned +22px lower to −55 (design
+   call: the wheel sits lower; far tiles peek more and the wrap-fade still finishes
+   while the tile is exiting the edge). Tune size via s → recompute the lift (± a few
+   px of taste); big solo lift changes bring the wrap back on-screen. */
+@media (width < 768px) {
+  [data-shots-wheel] {
+    transform: translateY(-55px) scale(0.6);
+    transform-origin: center;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* Fluid type tokens → text-display / text-hero / text-body-lg / text-body.
+     Reference the --fs-* source vars above so the value tracks the mobile media
+     query (docs/responsive-system.md §3). */
+  --text-display: var(--fs-display);
+  --text-hero: var(--fs-hero);
+  --text-body-lg: var(--fs-body-lg);
+  --text-body: var(--fs-body);
+  /* Product Sans (proprietary) is the primary typeface, self-hosted via
+     next/font/local in layout.tsx (--font-product-sans). It's the default sans
+     for the whole site, so font-sans and the base body font both resolve to it.
+     --font-product is kept as an explicit alias for components that opt in. */
+  --font-product-stack: var(--font-product-sans), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-sans: var(--font-product-stack);
+  --font-product: var(--font-product-stack);
+  --font-mono: var(--font-geist-mono);
+  --font-instrument: var(--font-instrument-serif), ui-serif, Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Custom cursor — hide the native cursor ONLY while the JS-mounted custom
+   cursor is live. Scoped to a data attribute that components/cursor sets after
+   it mounts and confirms eligibility, so touch / no-JS / SSR keep their native
+   cursor (a global `cursor: none` would strip it from everyone). */
+html[data-custom-cursor="on"],
+html[data-custom-cursor="on"] * {
+  cursor: none;
+}
+
+/* ─── On-load reveal (hero text slide-up) ──────────────────────────────────
+   Initial hidden state for the staggered on-load reveal. It is keyed on the
+   `.reveal-armed` class, which a synchronous inline script in layout.tsx adds
+   to <html> before first paint — so the text is hidden the instant it renders
+   (no flash of final-position text before hydration), yet stays fully visible
+   for no-JS users (the class is never added). The GSAP timeline in
+   `hero-reveal.tsx` animates these back to their resting state.
+
+   Variants:
+   - [data-reveal]       masked slide-up — the element lives inside an
+                         `overflow:hidden` wrapper, so translateY(110%) parks it
+                         fully below the clip edge (invisible) until it rises.
+   - [data-reveal-fade]  fade + small slide — for the logos row (its own
+                         mask-image edge fade) and the CTA row (interactive, so
+                         a clip would shave focus rings / hover scale).
+   - [data-reveal-soft]  opacity only, no transform — for the navbar, whose
+                         `-translate-y-1/2` centering must not be overwritten.
+   - [data-reveal-split] the headline; hidden until SplitText has wrapped it,
+                         after which the timeline rolls each masked char up.
+   - [data-reveal-words] the sub-paragraph; same, but rolled up per word.
+   - [data-reveal-cta]   a button — the inner control starts at opacity:0 and
+                         simply fades in (no clip / no slide, so the hover glow
+                         and focus ring are never shaved). */
+[data-reveal],
+[data-reveal-fade] {
+  will-change: transform;
+}
+
+.reveal-armed [data-reveal] {
+  transform: translateY(110%);
+}
+
+.reveal-armed [data-reveal-fade] {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.reveal-armed [data-reveal-soft] {
+  opacity: 0;
+}
+
+.reveal-armed [data-reveal-split],
+.reveal-armed [data-reveal-words] {
+  opacity: 0;
+}
+
+.reveal-armed [data-reveal-cta] > * {
+  opacity: 0;
+  will-change: opacity;
+}
+
+/* Rocks — the two cliffs park for their on-load "drift" entrance: faded + a few
+   px high, then a soft settle into place (rock-reveal.tsx plays it). Held on
+   .reveal-armed so they hold before JS and stay visible for no-JS. */
+[data-rock] {
+  will-change: transform, opacity;
+}
+
+.reveal-armed [data-rock] {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Soften the hard bottom crop of the hero cliff PNGs (rock.tsx + grass-rocks.tsx).
+   The assets are full-height cut-outs anchored to the hero's base, so their
+   bottom edge is a flat horizontal slice — a "weird cutout" against the sky.
+   A bottom-fading mask dissolves that edge so the rock melts into the
+   sky/clouds instead of ending on a hard line. Percentages are relative to the
+   image box (= hero height), so the fade scales with the viewport. The grass
+   overlay carries its own radial hover mask on its CONTAINER; this lives on the
+   inner images, so the two masks compose (disc ∩ base-fade) without conflict.
+   Tune the band via the two custom properties. */
+.rock-base-fade {
+  --rock-fade-bottom: 5%; /* fully transparent from the base up to here */
+  --rock-fade-top: 20%; /* fully opaque from here up */
+  -webkit-mask-image: linear-gradient(
+    to top,
+    transparent var(--rock-fade-bottom),
+    #000 var(--rock-fade-top)
+  );
+  mask-image: linear-gradient(
+    to top,
+    transparent var(--rock-fade-bottom),
+    #000 var(--rock-fade-top)
+  );
+}
+
+/* The right cliff sits lower/heavier at its base, so it needs a taller fade to
+   dissolve cleanly — push the band higher than the shared default (rock.tsx
+   tags the wrapper with data-rock-side). */
+[data-rock-side="right"] .rock-base-fade {
+  --rock-fade-bottom: 5%;
+  --rock-fade-top: 26%;
+}
+
+/* Grass-rock hover reveal (grass-rocks.tsx + rock-hover.tsx). The lush cliff
+   overlay is hidden by a radial-gradient mask and uncovered only inside a soft
+   disc that tracks the pointer. We keep the gradient's shape fixed and move it
+   via mask-position (cheap — no per-frame re-raster); mask-size only changes on
+   the short open/close tween. At rest --reveal-size is 0, so the tile is 0×0 and
+   the overlay is fully masked out, leaving just the bare cliffs. The mask centre
+   is offset by half the size to centre the disc on the cursor. */
+[data-grass-overlay] {
+  --reveal-x: -9999px;
+  --reveal-y: -9999px;
+  --reveal-size: 0px;
+  --reveal-half: 0px; /* half of --reveal-size, so the tile centres on the cursor */
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 0%, #000 38%, transparent 100%);
+  mask-image: radial-gradient(circle closest-side, #000 0%, #000 38%, transparent 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: var(--reveal-size) var(--reveal-size);
+  mask-size: var(--reveal-size) var(--reveal-size);
+  -webkit-mask-position: calc(var(--reveal-x) - var(--reveal-half))
+    calc(var(--reveal-y) - var(--reveal-half));
+  mask-position: calc(var(--reveal-x) - var(--reveal-half))
+    calc(var(--reveal-y) - var(--reveal-half));
+  transform: translateZ(0); /* own compositor layer so reveal repaints stay isolated */
+  will-change: mask-position, mask-size;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-grass-overlay] {
+    display: none;
+  }
+}
+
+/* Designs Shots collage — the seven tiles park scaled-down + invisible for the
+   on-load "bloom from center" (design-shots-reveal.tsx). Keyed on .reveal-armed
+   so they hold before JS and stay visible for no-JS. The reveal wrapper carries
+   no other transform (the tile's translate-centering lives on its parent, the
+   mirror flip on its child), so a plain scale park is safe.
+
+   will-change is deliberately NOT set here: it's applied in JS (begin(), in
+   design-shots-reveal.tsx) only when the DOM tiles actually animate. Setting it
+   permanently kept 16 compositor layers alive even in the common WebGL-intro
+   path, where this DOM collage stays hidden and never blooms. */
+.reveal-armed [data-shot] {
+  opacity: 0;
+  transform: scale(0.86);
+}
+
+/* Tagline "supersize" reveal (air.inc-style) — scrubbed per line via --p (0→1,
+   set on the line by tagline-reveal.tsx and inherited down to each character's
+   [data-tfill]). Defaults to 1 so SSR / no-JS / reduced-motion render the
+   finished headline. Two compositor-only channels off one variable (the line
+   stays in place):
+     • blur — clears from the resting 0.43vw (design value) to crisp
+     • fill — a bright [data-tfill] clone (one per character) is wiped in
+              bottom→top over the dim base through a progress-driven gradient
+              mask.
+   The third channel, the per-character roll-up, is a GSAP transform on each
+   [data-tchar] mover; its padding-bottom (set inline) gives descenders room
+   inside the overflow-hidden clip, so the mask (below) also covers them. */
+[data-trise] {
+  filter: blur(calc((1 - var(--p, 1)) * 0.43vw));
+  will-change: filter;
+}
+[data-tfill] {
+  --top: calc(100% - var(--p, 1) * 150%);
+  --bottom: calc(100% - var(--p, 1) * 100%);
+  -webkit-mask-image: linear-gradient(transparent var(--top), #000 var(--bottom));
+  mask-image: linear-gradient(transparent var(--top), #000 var(--bottom));
+  will-change: mask;
+}
+
+/* Honour reduced-motion: stay armed (so the class can still gate JS), but show
+   everything in its resting state with no transform. The orchestrator also
+   bails out, so nothing animates. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-armed [data-reveal],
+  .reveal-armed [data-reveal-fade],
+  .reveal-armed [data-reveal-split],
+  .reveal-armed [data-reveal-words],
+  .reveal-armed [data-reveal-cta] > *,
+  .reveal-armed [data-rock],
+  .reveal-armed [data-shot] {
+    opacity: 1;
+    transform: none;
+  }
+  /* Opacity-only: never touch transform (the navbar's own translate centers it). */
+  .reveal-armed [data-reveal-soft] {
+    opacity: 1;
+  }
+}
+
+/* ── "why teams stay" glass reel (why-stay.tsx / why-stay-reveal.tsx) ────────
+   Both reel columns — the dim base (the fog) and the bright magnified lens —
+   translate as ONE via the inherited `--reel-y`, set on the stage by the
+   scrubbed timeline. Defaults to 0 so SSR / no-JS / reduced-motion render the
+   first phrase centred in the pill. The lens's per-phrase magnification is a
+   static scale in the markup, so this shared translate keeps the two layers in
+   register at every scroll position. */
+[data-reel-col] {
+  transform: translateY(var(--reel-y, 0px));
+  will-change: transform;
+}
+
+/* The fog window: fade the stacked phrases to transparent above and below the
+   pill band so only the framed phrase reads. The opaque plateau (40%→60% of the
+   380px window) hugs the pill; neighbours sit in the fading zone. */
+[data-whystay-window] {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 6%,
+    #000 40%,
+    #000 60%,
+    transparent 94%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 6%,
+    #000 40%,
+    #000 60%,
+    transparent 94%
+  );
+}
+
+/* ── Welcome loading screen (intro-loader.tsx) ──────────────────────────────
+   A pure DOM/CSS cover over the sky while the WebGL intro warms up. It carries
+   no background of its own — the global <Background/> sky + grain show through —
+   and stacks the ascend chevron, the wordmark, and a hairline progress bar
+   (Figma "Hero base", node 263:198). The container's opacity is toggled in React
+   for the crossfade-out. Entrance/idle motion is intentionally minimal for now;
+   these hooks (loader-mark, loader-track/loader-fill) are where it gets added. */
+/* Masked reveal — each element rises from behind its own clip line ("its own
+   plane"). The clip hugs the element; the inner riser starts fully below it and
+   slides to rest, staggered via --rise-delay (logo leads, wordmark follows).
+   `both` fill-mode holds the off-screen start through the delay, then the rest
+   pose after — no flash before the stagger begins. */
+.loader-reveal {
+  overflow: hidden;
+}
+
+.loader-rise {
+  transform: translateY(115%);
+  animation: loader-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1)
+    var(--rise-delay, 0s) both;
+  will-change: transform;
+}
+
+@keyframes loader-rise {
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Determinate hairline progress (Figma Loader, node 263:227): a faint full-width
+   track with a white fill that grows left→right (scaleX, so it stays on the
+   compositor). The fill shows REAL progress, staged in two regimes:
+   • pre-hydration (CSS only — the main JS is still downloading, the page knows
+     nothing): a quick sweep to ~10%, then a patient crawl toward ~22% over
+     ~30s, so the bar visibly moves even on a 3G cold load;
+   • post-hydration: intro-loader.tsx kills this animation and drives the fill
+     from its current position via GSAP on real milestones (app booted → scene
+     chunk parsed → scene painted → 100%), then the cover fades. */
+.loader-track {
+  position: relative;
+  flex-shrink: 0;
+  width: 232px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.loader-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: #ffffff;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: loader-fill 30s cubic-bezier(0.3, 0.6, 0.4, 1) 0.3s both;
+  will-change: transform;
+}
+
+/* 8% of 30s = 2.4s — the entrance sweep keeps the old choreography's rhythm;
+   the long tail then crawls so the bar never freezes while JS is in flight. */
+@keyframes loader-fill {
+  0% {
+    transform: scaleX(0);
+  }
+  8% {
+    transform: scaleX(0.1);
+  }
+  100% {
+    transform: scaleX(0.22);
+  }
+}
+
+/* Reduced motion: never show the cover at all (introWillPlay() is false for
+   these visitors too, so there's nothing to cover). */
+@media (prefers-reduced-motion: reduce) {
+  [data-intro-loader] {
+    display: none;
+  }
+}

@@ -1,0 +1,111 @@
+import DesignShots from "@/components/sections/design-shots/design-shots";
+import DesignShotsReveal from "@/components/sections/design-shots/design-shots-reveal";
+import GrassRocks from "./grass-rocks";
+import HeroReveal from "./hero-reveal";
+import HeroText from "./hero-text";
+import Intro from "@/components/sections/intro/intro";
+import Logos from "@/components/sections/logos/logos";
+import LogosMarquee from "@/components/sections/logos/logos-marquee";
+import Rock from "./rock";
+import RockHover from "./rock-hover";
+import RockReveal from "./rock-reveal";
+import Wordmark from "@/components/ui/wordmark";
+
+/**
+ * Hero section — built component by component to match the Figma "Hero base"
+ * frame (103:4, 1512×982). The sky (solid fill + grain + volumetric clouds)
+ * is the global fixed <Background/> mounted in layout.tsx; the hero is
+ * transparent over it.
+ */
+export default function Hero() {
+  return (
+    <section
+      data-hero
+      // min-height floor: this layout is Figma-mapped to a 982px-tall frame —
+      // HeroText hangs from top:52.4% (bottom ≈ .524H + 256px) while the logos
+      // row anchors to bottom:44px (top ≈ H − 132px). Below H ≈ 850px those
+      // collide (the "trusted by founders" caption ran through the CTAs on
+      // short windows), so the hero grows past the viewport there instead —
+      // the page scrolls a touch and the composition keeps its clearances.
+      className="relative min-h-[max(100dvh,850px)] w-full overflow-hidden"
+    >
+      {/* Drives the staggered on-load slide-up reveal of the text blocks below
+          (marked with data-reveal* / data-reveal-order). Renders nothing. */}
+      <HeroReveal />
+
+      {/* Logos trusted-by row (node 103:6): centered, anchored near the hero
+          bottom — frame bottom y=938 of the 982-tall hero (44px gap). Rendered
+          BEFORE the rocks so the cliffs paint over it: the marquee wordmarks
+          scroll out from behind the rocks (this page layers by DOM order — the
+          rocks sit at z-0 and everything after them paints on top). */}
+      <div className="absolute bottom-[44px] left-1/2 w-[1351px] max-w-[calc(100vw-3rem)] -translate-x-1/2">
+        {/* Drives the infinite leftward marquee of the brand row; renders nothing. */}
+        <LogosMarquee />
+        <Logos />
+      </div>
+
+      {/* Rocks (nodes 103:19 / 103:18): cliffs pinned to the hero's bottom
+          edges, framing the content. RockEntrance drives their on-load rise
+          (Option A); it renders nothing. */}
+      <RockReveal />
+      <Rock side="left" />
+      <Rock side="right" />
+
+      {/* Grass-rock hover reveal (nodes 56:58 / 69:175): the lush variant of the
+          cliffs, registered over the bare ones and uncovered in a soft disc that
+          follows the cursor. GrassRocks is the masked overlay; RockHover drives
+          the mask and renders nothing. */}
+      <GrassRocks />
+      <RockHover />
+
+      {/* Welcome intro (Figma "OnBoarding" 200:147): a once-per-session WebGL
+          liquid-glass "kiwikoru" that rises, then docks onto the wordmark slot
+          below, handing off to the hero. Transparent overlay; renders nothing
+          for returning sessions / reduced-motion. */}
+      <Intro />
+
+      {/* kiwikoru wordmark (node 77:174): top-center brand mark, glyph top ~55px
+          of the 982-tall hero, ~36px Product Sans Medium. Sits above the
+          collage on plain sky. `data-wordmark-slot` is the intro's dock target. */}
+      <div
+        data-wordmark-slot
+        // max-md: nudged up so the conveyor's centre tile (which must ride high —
+        // its far slots pin to the viewport top edge for the off-screen wrap, see
+        // [data-shots-wheel] in globals.css) keeps clear air below the wordmark.
+        className="absolute left-1/2 top-[40px] z-10 -translate-x-1/2 text-[38px] max-md:top-[24px]"
+      >
+        {/* Masked slide-up reveal (cascade #1). */}
+        <span className="block overflow-hidden">
+          <span className="block" data-reveal data-reveal-order={1}>
+            <Wordmark />
+          </span>
+        </span>
+      </div>
+
+      {/* Designs Shots collage (node 103:30): centered horizontally, near the
+          top — frame origin x=241,y=-44 within the 1512×982 hero. DesignShotsReveal
+          drives the on-load bloom-from-center of the tiles; it renders nothing. */}
+      <DesignShotsReveal />
+      <div className="absolute left-1/2 top-[-44px] h-[491px] w-[1029px] -translate-x-1/2">
+        {/* Below md the whole wheel scales (floored at 0.5) so the centre/inner
+            tiles stay legible and the outer tiles clip against the hero's
+            overflow-hidden (globals.css [data-shots-wheel]). The conveyor motion +
+            intro handoff stay untouched inside. Inert ≥768px → desktop byte-identical. */}
+        <div data-shots-wheel className="size-full">
+          <DesignShots />
+        </div>
+      </div>
+
+      {/* Hero Text (node 103:22): centered, frame top y=515 of the 982-tall hero.
+          Below md it re-anchors from the BOTTOM (top-auto + bottom-[180px]) instead
+          of hanging from 52.4%: the logos row is bottom-anchored too (bottom-[44px]),
+          so pinning the text block a fixed distance above the hero floor keeps a
+          constant CTA→"trusted by founders" gap on every phone height (the hero
+          floors at 850px), regardless of how many lines the headline wraps to.
+          Desktop keeps top-[52.4%] unchanged. */}
+      <div className="absolute left-1/2 top-[52.4%] w-[775px] max-w-[calc(100vw-3rem)] -translate-x-1/2 max-md:top-auto max-md:bottom-[180px]">
+        <HeroText />
+      </div>
+    </section>
+  );
+}

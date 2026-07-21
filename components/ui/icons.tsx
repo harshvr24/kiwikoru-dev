@@ -1,0 +1,222 @@
+import type { SVGProps } from "react";
+
+/**
+ * Icons extracted from the Figma "Startup" file (NavBar section).
+ * All use `currentColor` so they inherit text color and stay themeable.
+ */
+
+/** Hamburger / menu lines used in the condensed pill (nodes 75:346–347). */
+export function MenuLines(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 17 7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <line x1="0.75" y1="1" x2="16.25" y2="1" />
+      <line x1="4" y1="6" x2="13" y2="6" />
+    </svg>
+  );
+}
+
+/** Close (✕) shown in the pill when the menu is expanded (node 75:381). */
+export function CloseIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 12 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M1 1L11 11" />
+      <path d="M11 1L1 11" />
+    </svg>
+  );
+}
+
+/** Check / tick used on the cards' "delivered" and "board ready" pills
+ *  (receive-media + subscribe-media, Figma 124:254). Stroked with
+ *  currentColor so the consumer sets its ink (both use the dark #263138). */
+export function CheckMark(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M5 12.5l4.2 4.2L19 7" />
+    </svg>
+  );
+}
+
+/** Paper-plane "send" glyph (lucide send-horizontal, Figma 328:181). Stroked
+ *  with currentColor so the consumer sets its ink (the send button uses the
+ *  dark #263138 on a white chip). */
+export function SendHorizontal(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 18 18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M16.5001 8.99991C16.5001 9.07094 16.4799 9.14052 16.4419 9.20053C16.4039 9.26055 16.3496 9.30853 16.2854 9.3389L2.7854 15.7139C2.71797 15.7466 2.64227 15.7582 2.56813 15.7473C2.49399 15.7364 2.42485 15.7035 2.36969 15.6528C2.31452 15.6021 2.27589 15.5359 2.25881 15.463C2.24172 15.39 2.24698 15.3136 2.2739 15.2437L4.4054 9.52341C4.53115 9.18573 4.53115 8.81408 4.4054 8.47641L2.27315 2.75615C2.24609 2.68614 2.24077 2.60959 2.25786 2.5365C2.27495 2.46341 2.31367 2.39717 2.36896 2.3464C2.42426 2.29564 2.49357 2.26272 2.56785 2.25193C2.64213 2.24114 2.71794 2.25298 2.7854 2.28591L16.2854 8.66091C16.3496 8.69128 16.4039 8.73926 16.4419 8.79928C16.4799 8.85929 16.5001 8.92887 16.5001 8.99991ZM16.5001 8.99991H4.4999" />
+    </svg>
+  );
+}
+
+/* ── Sky-mode glyphs (theme controller, mode-switcher.tsx) ──────────────────
+   Hand-drawn to match this module's stroked, currentColor style (lucide-shaped:
+   sunrise/day/sunset/night). Not from the Figma payload — the switcher is a
+   site addition — and deliberately NOT a new icon-package import. 24×24, round
+   caps/joins, 1.75 stroke to sit comfortably at ~20px. */
+
+/** Sunrise — sun cresting the horizon with an upward shaft. */
+export function SunriseIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M12 2v8" />
+      <path d="m4.93 10.93 1.41 1.41" />
+      <path d="M2 18h2" />
+      <path d="M20 18h2" />
+      <path d="m19.07 10.93-1.41 1.41" />
+      <path d="M22 22H2" />
+      <path d="m8 6 4-4 4 4" />
+      <path d="M16 18a4 4 0 0 0-8 0" />
+    </svg>
+  );
+}
+
+/** Day — full sun with rays. */
+export function SunIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </svg>
+  );
+}
+
+/** Sunset — sun dipping below the horizon with a downward shaft. */
+export function SunsetIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M12 10V2" />
+      <path d="m4.93 10.93 1.41 1.41" />
+      <path d="M2 18h2" />
+      <path d="M20 18h2" />
+      <path d="m19.07 10.93-1.41 1.41" />
+      <path d="M22 22H2" />
+      <path d="m16 6-4 4-4-4" />
+      <path d="M16 18a4 4 0 0 0-8 0" />
+    </svg>
+  );
+}
+
+/** Night — crescent moon. */
+export function MoonIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  );
+}
+
+/**
+ * Facebook glyph. Not in the Figma export — the design only drew X + Instagram;
+ * added to match KiwiKoru's WordPress nav, which shows four socials. Same 24×24
+ * box and `currentColor` fill as XSocial so the row stays visually consistent.
+ */
+export function FacebookSocial(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073Z" />
+    </svg>
+  );
+}
+
+/** LinkedIn glyph. Added alongside FacebookSocial — see the note there. */
+export function LinkedInSocial(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286ZM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124Zm1.782 13.019H3.555V9h3.564v11.452ZM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003Z" />
+    </svg>
+  );
+}
+
+/** X / Twitter glyph (social row, node 75:309). */
+export function XSocial(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M17.7512 2.96094H20.818L14.1179 10.6187L22 21.0391H15.8284L10.9946 14.7191L5.4636 21.0391H2.39492L9.56132 12.8483L2 2.96094H8.32824L12.6976 8.73762L17.7512 2.96094ZM16.6748 19.2035H18.3742L7.40492 4.70014H5.58132L16.6748 19.2035Z" />
+    </svg>
+  );
+}
+
+/** Instagram glyph (social row, node 75:311). */
+export function InstagramSocial(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="31 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M39.6672 12C39.6672 10.1591 41.1591 8.6664 43 8.6664C44.8409 8.6664 46.3336 10.1591 46.3336 12C46.3336 13.8409 44.8409 15.3336 43 15.3336C41.1591 15.3336 39.6672 13.8409 39.6672 12ZM37.8651 12C37.8651 14.836 40.164 17.1349 43 17.1349C45.836 17.1349 48.1349 14.836 48.1349 12C48.1349 9.164 45.836 6.86512 43 6.86512C40.164 6.86512 37.8651 9.164 37.8651 12ZM47.1382 6.66152C47.1381 6.89886 47.2084 7.13089 47.3401 7.32829C47.4719 7.52568 47.6593 7.67956 47.8785 7.77047C48.0977 7.86138 48.339 7.88525 48.5718 7.83904C48.8046 7.79283 49.0185 7.67862 49.1863 7.51087C49.3542 7.34311 49.4686 7.12934 49.515 6.89658C49.5614 6.66382 49.5377 6.42253 49.447 6.20322C49.3563 5.98392 49.2025 5.79644 49.0052 5.6645C48.808 5.53257 48.576 5.4621 48.3386 5.462C48.0204 5.46215 47.715 5.58856 47.49 5.81347C47.265 6.03837 47.1384 6.34339 47.1382 6.66152ZM38.96 20.1398C37.985 20.0954 37.4551 19.933 37.103 19.7958C36.6361 19.614 36.303 19.3975 35.9527 19.0478C35.6025 18.698 35.3857 18.3652 35.2047 17.8983C35.0674 17.5463 34.905 17.0162 34.8607 16.0413C34.8122 14.9872 34.8026 14.6706 34.8026 12.0001C34.8026 9.3296 34.813 9.01384 34.8607 7.95888C34.9051 6.98392 35.0687 6.45488 35.2047 6.10184C35.3865 5.63496 35.603 5.30184 35.9527 4.9516C36.3025 4.60136 36.6353 4.38456 37.103 4.2036C37.455 4.06632 37.985 3.90392 38.96 3.8596C40.0141 3.81112 40.3307 3.80144 43 3.80144C45.6693 3.80144 45.9862 3.81192 47.0412 3.8596C48.0162 3.904 48.5452 4.0676 48.8982 4.2036C49.3651 4.38456 49.6982 4.60184 50.0485 4.9516C50.3987 5.30136 50.6147 5.63496 50.7965 6.10184C50.9338 6.45384 51.0962 6.98392 51.1405 7.95888C51.189 9.01384 51.1986 9.3296 51.1986 12.0001C51.1986 14.6706 51.189 14.9863 51.1405 16.0413C51.0961 17.0162 50.9329 17.5462 50.7965 17.8983C50.6147 18.3652 50.3982 18.6983 50.0485 19.0478C49.6987 19.3972 49.3651 19.614 48.8982 19.7958C48.5462 19.933 48.0162 20.0954 47.0412 20.1398C45.9871 20.1882 45.6705 20.1979 43 20.1979C40.3295 20.1979 40.0138 20.1882 38.96 20.1398ZM38.8772 2.06056C37.8126 2.10904 37.0852 2.27784 36.4499 2.52504C35.792 2.78032 35.235 3.1228 34.6785 3.67848C34.1219 4.23416 33.7803 4.792 33.525 5.44992C33.2778 6.0856 33.109 6.81264 33.0606 7.8772C33.0113 8.94344 33 9.28432 33 12C33 14.7157 33.0113 15.0566 33.0606 16.1228C33.109 17.1874 33.2778 17.9144 33.525 18.5501C33.7803 19.2076 34.122 19.7661 34.6785 20.3215C35.235 20.877 35.792 21.219 36.4499 21.475C37.0864 21.7222 37.8126 21.891 38.8772 21.9394C39.944 21.9879 40.2843 22 43 22C45.7157 22 46.0566 21.9887 47.1228 21.9394C48.1874 21.891 48.9144 21.7222 49.5501 21.475C50.2076 21.219 50.765 20.8772 51.3215 20.3215C51.8781 19.7658 52.219 19.2076 52.475 18.5501C52.7222 17.9144 52.8918 17.1874 52.9394 16.1228C52.9879 15.0558 52.9992 14.7157 52.9992 12C52.9992 9.28432 52.9879 8.94344 52.9394 7.8772C52.891 6.81256 52.7222 6.0852 52.475 5.44992C52.219 4.7924 51.8772 4.23504 51.3215 3.67848C50.7658 3.12192 50.2076 2.78032 49.5509 2.52504C48.9144 2.27784 48.1874 2.10824 47.1236 2.06056C46.0574 2.01208 45.7165 2 43.0008 2C40.2851 2 39.944 2.01128 38.8772 2.06056Z" />
+    </svg>
+  );
+}
